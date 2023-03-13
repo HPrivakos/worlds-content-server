@@ -59,6 +59,7 @@ async function initComponents(): Promise<TestComponents> {
     ...components,
     localFetch: await createLocalFetchCompoment(config),
     marketplaceSubGraph: createMockMarketplaceSubGraph(),
+    ensSubGraph: createMockMarketplaceSubGraph(),
     namePermissionChecker: namePermissionChecker,
     commsAdapter,
     fetch,

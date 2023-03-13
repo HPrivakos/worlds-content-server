@@ -16,15 +16,18 @@ import {
 import { createStatusComponent } from './adapters/status'
 import { createValidator } from './adapters/validator'
 import { createDclNameChecker, createOnChainDclNameChecker } from './adapters/dcl-name-checker'
+import { createENSNameChecker } from './adapters/ens-checker'
 import { createLimitsManagerComponent } from './adapters/limits-manager'
 import { createWorldsManagerComponent } from './adapters/worlds-manager'
 import { createCommsAdapterComponent } from './adapters/comms-adapter'
 
 async function determineNameValidator(
-  components: Pick<AppComponents, 'config' | 'ethereumProvider' | 'logs' | 'marketplaceSubGraph'>
+  components: Pick<AppComponents, 'config' | 'ethereumProvider' | 'logs' | 'marketplaceSubGraph' | 'ensSubGraph'>
 ) {
   const nameValidatorStrategy = await components.config.requireString('NAME_VALIDATOR')
   switch (nameValidatorStrategy) {
+    case 'ENS_CHECKER':
+      return createENSNameChecker(components)
     case 'DCL_NAME_CHECKER':
       return createDclNameChecker(components)
     case 'ON_CHAIN_DCL_NAME_CHECKER':
@@ -70,6 +73,7 @@ export async function initComponents(): Promise<AppComponents> {
 
   const subGraphUrl = await config.requireString('MARKETPLACE_SUBGRAPH_URL')
   const marketplaceSubGraph = await createSubgraphComponent({ config, logs, metrics, fetch }, subGraphUrl)
+  const ensSubGraph = await createSubgraphComponent({ config, logs, metrics, fetch }, subGraphUrl)
 
   const snsArn = await config.getString('SNS_ARN')
 
@@ -83,7 +87,8 @@ export async function initComponents(): Promise<AppComponents> {
     config,
     ethereumProvider,
     logs,
-    marketplaceSubGraph
+    marketplaceSubGraph,
+    ensSubGraph
   })
 
   const limitsManager = await createLimitsManagerComponent({ config, fetch, logs })
@@ -115,6 +120,7 @@ export async function initComponents(): Promise<AppComponents> {
     sns,
     status,
     validator,
-    worldsManager
+    worldsManager,
+    ensSubGraph
   }
 }

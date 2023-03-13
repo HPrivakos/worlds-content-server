@@ -5,6 +5,7 @@ import { createLogComponent } from '@well-known-components/logger'
 import { IConfigComponent, ILoggerComponent } from '@well-known-components/interfaces'
 import { getIdentity } from '../utils'
 import { createHttpProviderMock } from '../mocks/http-provider-mock'
+import { createENSNameChecker } from '../../src/adapters/ens-checker'
 
 describe('dcl name checker: TheGraph', function () {
   let logs: ILoggerComponent
@@ -116,5 +117,65 @@ describe('dcl name checker: on-chain', function () {
     const identity = await getIdentity()
     const address = identity.authChain.authChain[0].payload
     await expect(dclNameChecker.checkPermission(address, 'my-super-name.dcl.eth')).resolves.toBeTruthy()
+  })
+})
+
+describe('ENS name checker: TheGraph', function () {
+  let logs: ILoggerComponent
+
+  beforeEach(async () => {
+    logs = await createLogComponent({
+      config: createConfigComponent({
+        LOG_LEVEL: 'DEBUG'
+      })
+    })
+  })
+
+  it('when permission asked for invalid name returns false', async () => {
+    const ensNameChecker = createENSNameChecker({
+      logs,
+      ensSubGraph: {
+        query: async (_query: string, _variables?: Variables, _remainingAttempts?: number): Promise<any> => ({
+          domains: []
+        })
+      }
+    })
+
+    await expect(ensNameChecker.checkPermission('0xb', '')).resolves.toBeFalsy()
+  })
+
+  it('when no names returned from TheGraph returns false', async () => {
+    const ensNameChecker = createENSNameChecker({
+      logs,
+      ensSubGraph: {
+        query: async (_query: string, _variables?: Variables, _remainingAttempts?: number): Promise<any> => ({
+          domains: []
+        })
+      }
+    })
+
+    await expect(ensNameChecker.checkPermission('0xb', 'dcl.eth')).resolves.toBeFalsy()
+  })
+
+  it('when requested name is returned from TheGraph returns true', async () => {
+    const dclNameChecker = createENSNameChecker({
+      logs,
+      ensSubGraph: {
+        query: async (_query: string, _variables?: Variables, _remainingAttempts?: number): Promise<any> => ({
+          domains: [
+            {
+              name: 'dcl.eth',
+              resolvedAddress: {
+                id: '0xf47917b108ca4b820ccea2587546fbb9f7564b56'
+              }
+            }
+          ]
+        })
+      }
+    })
+
+    await expect(
+      dclNameChecker.checkPermission('0xf47917b108ca4b820ccea2587546fbb9f7564b56', 'dcl.eth')
+    ).resolves.toBeTruthy()
   })
 })

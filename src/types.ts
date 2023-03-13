@@ -117,6 +117,7 @@ export type BaseComponents = {
   sns: SnsComponent
   validator: Validator
   worldsManager: IWorldsManager
+  ensSubGraph: ISubgraphComponent
 }
 
 export type SnsComponent = { arn?: string }
